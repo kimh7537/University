@@ -4,7 +4,70 @@
     <meta charset="UTF-8">
     <title>Title</title>
 </head>
+<style>
+    #user-id {
+        position: absolute;
+        top: 10px;
+        right: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        padding: 5px;
+        background-color: #f9f9f9;
+        font-weight: bold;
+    }
+</style>
 <body>
+<div id="user-id">ID: {{ user }}</div>
+
+<h2>Movies</h2>
+
+<form action="/movie_sort" method="post">
+    <input type="hidden" name="id" value= {{ user }}>
+    <input type="submit" name="send" value="latest">
+    <input type="submit" name="send" value="genre">
+    <input type="submit" name="send" value="ratings">
+</form>
+<table border="1">
+    <thead>
+        <th>title</th>
+        <th>ratings</th>
+        <th>director</th>
+        <th>genre</th>
+        <th>release date</th>
+    </thead>
+    <tbody>
+        {% for movie in movies %}
+            <tr>
+                <td>{{ movie[0] }}</td>
+                <td>{{ movie[1] }}</td>
+                <td>{{ movie[2] }}</td>
+                <td>{{ movie[3] }}</td>
+                <td>{{ movie[4] }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+
+</table>
+
+{{ '============================================================' }}<br>
+
+{#<h2>Reviews</h2>#}
+{#<table>#}
+{#    <tr>#}
+{#        <th><a href="{{ url_for('sort', user_id=user, list='reviews', sort='ratings') }}">ratings</a></th>#}
+{#        <th><a href="{{ url_for('sort', user_id=user, list='reviews', sort='title') }}">Title</a></th>#}
+{#        <th>Review</th>#}
+{#        <th>Time</th>#}
+{#    </tr>#}
+{#    {% for review in reviews %}#}
+{#        <tr>#}
+{#            <td>{{ review[0] }}</td> <!-- Adjust column indices as per your data schema -->#}
+{#            <td>{{ review[1] }}</td>#}
+{#            <td>{{ review[2] }}</td>#}
+{#            <td>{{ review[3] }}</td>#}
+{#        </tr>#}
+{#    {% endfor %}#}
+{#</table>#}
 
 </body>
 </html>
