@@ -4,7 +4,91 @@
     <meta charset="UTF-8">
     <title>Title</title>
 </head>
+<style>
+    #user-id {
+        position: absolute;
+        top: 10px;
+        right: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        padding: 5px;
+        background-color: #f9f9f9;
+        font-weight: bold;
+    }
+    #main-page {
+        position: absolute;
+        top: 10px;
+        right: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        padding: 5px;
+        background-color: #f9f9f9;
+        font-weight: bold;
+    }
+</style>
 <body>
+<div id="user-id">ID: {{ user }}</div>
+<h2>ID : {{ user }}</h2>
+<div id="main-page">Main Page</div>
 
-</body>
+<h2>{{ movie_info[0] }}</h2>
+
+<table border="1">
+    <thead>
+    <th>director</th>
+    <th>genre</th>
+    <th>release date</th>
+    </thead>
+    <tbody>
+    <tr>
+        <td>{{ movie_info[1] }}</td>
+        <td>{{ movie_info[2] }}</td>
+        <td>{{ movie_info[3] }}</td>
+    </tr>
+    </tbody>
+
+</table>
+
+{{ '============================================================' }}<br>
+
+{#<h2>Reviews</h2>#}
+{#<form action="/review_sort" method="post">#}
+{#    <input type="hidden" name="id" value= {{ user }}>#}
+{#    <input type="submit" name="send" value="latest">#}
+{#    <input type="submit" name="send" value="title">#}
+{#    <input type="submit" name="send" value="followers">#}
+{#</form>#}
+{#<table border="1">#}
+{#    <thead>#}
+{#    <th>ratings</th>#}
+{#    <th>user</th>#}
+{#    <th>title</th>#}
+{#    <th>review</th>#}
+{#    <th>time</th>#}
+{#    </thead>#}
+{#    <tbody>#}
+{#    {% for review in reviews %}#}
+{#        <tr>#}
+{#            <td>{{ review[0] }}</td>#}
+{#            <td>#}
+{#                <form action="/user_info" method="post">#}
+{#                    <input type="hidden" name="id" value= {{ user }}>#}
+{#                    <input type="submit" name="review" value="{{ review[1] }}">#}
+{#                </form>#}
+{#            </td>#}
+{#            <td>#}
+{#                <form action="/movie_info" method="post">#}
+{#                    <input type="hidden" name="id" value= {{ user }}>#}
+{#                    <input type="submit" name="movie" value="{{ review[2] }}">#}
+{#                </form>#}
+{#            </td>#}
+{#            <td>{{ review[3] }}</td>#}
+{#            <td>{{ review[4] }}</td>#}
+{#        </tr>#}
+{#    {% endfor %}#}
+{#    </tbody>#}
+{##}
+{#</table>#}
+{##}
+{#</body>#}
 </html>
