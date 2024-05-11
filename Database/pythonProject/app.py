@@ -131,34 +131,33 @@ def submit_review():
 
 @app.route('/user_info', methods=['POST', 'GET'])
 def user_info():
-    my_id = request.form.get("id") or request.args.get("id")  # The ID of the logged-in user
-    target_user_id = request.form.get("review") or request.args.get("user_id")  # The ID of the user being viewed
+    my_id = request.form.get("id") or request.args.get("id")
+    target_user_id = request.form.get("target_user_id") or request.args.get("target_user_id")
 
-    if not my_id or not target_user_id:
-        return "My ID and Target User ID are required.", 400
-
-    # Fetch reviews written by the target user
     cur.execute("""
-        SELECT ratings, title, review, TO_CHAR(rev_time, 'YYYY-MM-DD HH24:MI:SS') AS formatted_time
+        SELECT ratings, title, review, TO_CHAR(rev_time, 'YYYY-MM-DD HH24:MI:SS')
         FROM reviews
-        WHERE uid = %s
+        JOIN movies ON mid = id
+        WHERE uid = '{}'
         ORDER BY rev_time DESC;
-    """, (target_user_id,))
+    """.format (target_user_id))
     reviews = cur.fetchall()
 
-    # Determine the followers and people the user follows/mutes
-    cur.execute("SELECT id FROM ties WHERE opid = %s AND tie = 'follow';", (target_user_id,))
+
+    cur.execute("SELECT id FROM ties WHERE opid = '{}' AND tie = 'follow';".format(target_user_id))
     followers = cur.fetchall()
 
-    cur.execute("SELECT opid FROM ties WHERE id = %s AND tie = 'follow';", (target_user_id,))
+    cur.execute("SELECT opid FROM ties WHERE id = '{}' AND tie = 'follow';".format(my_id))
     followed_users = cur.fetchall()
 
-    cur.execute("SELECT opid FROM ties WHERE id = %s AND tie = 'mute';", (target_user_id,))
+    cur.execute("SELECT opid FROM ties WHERE id = '{}' AND tie = 'mute';".format(my_id))
     muted_users = cur.fetchall()
 
-    # If the target user is an admin, skip follow/mute controls
-    cur.execute("SELECT role FROM users WHERE id = %s;", (target_user_id,))
-    role = cur.fetchone()[0]
+    cur.execute("SELECT role FROM users WHERE id = '{}';".format(my_id))
+    user_role = cur.fetchone()[0]
+
+    cur.execute("SELECT role FROM users WHERE id = '{}';".format(target_user_id))
+    target_role = cur.fetchone()[0]
 
     return render_template(
         "user_info.html",
@@ -168,8 +167,92 @@ def user_info():
         followers=followers,
         followed_users=followed_users,
         muted_users=muted_users,
-        role=role
+        user_role=user_role,
+        target_role=target_role
     )
+
+@app.route('/tie', methods=['POST'])
+def add_tie():
+    id = request.form["id"]
+    target_user_id = request.form["target_user_id"]
+    send = request.form["send"]
+
+    if send in ["follow", "mute"]:
+        cur.execute("""
+            SELECT * FROM ties
+            WHERE id = '{}' AND opid = '{}' AND tie = '{}';
+        """.format(id, target_user_id, send))
+        exists = cur.fetchone()
+
+    if not exists:
+        if send == "follow":
+            opposite_send = "mute"
+        elif send == "mute":
+            opposite_send = "follow"
+        cur.execute("""
+                DELETE FROM ties
+                WHERE id = '{}' AND opid = '{}' AND tie = '{}';
+            """.format(id, target_user_id, opposite_send))
+
+        cur.execute("""
+                INSERT INTO ties (id, opid, tie)
+                VALUES ('{}', '{}', '{}');
+            """.format(id, target_user_id, send))
+    connect.commit()
+    return redirect(url_for('user_info', id=id, target_user_id=target_user_id))
+
+
+
+
+@app.route('/edit_tie', methods=['POST'])
+def edit_tie():
+    id = request.form["id"]  #lisa
+    target_user_id = request.form["target_user_id"]  #andy
+    send = request.form["send"]
+
+    if send == "unfollow":
+        send = "follow"
+    elif send == "unmute":
+        send = "mute"
+
+    cur.execute("""
+                DELETE FROM ties
+                WHERE id = '{}' AND opid = '{}' AND tie = '{}';
+            """.format(id, target_user_id, send))
+    connect.commit()
+
+    return redirect(url_for('user_info', id=id, target_user_id=target_user_id))
+
+
+
+
+
+@app.route('/add_movie', methods=['POST'])
+def add_movie():
+    id = request.form["id"]
+    target_user_id = request.form["target_user_id"]
+
+    cur.execute("SELECT MAX(id) FROM movies;")
+    max_id_result = cur.fetchone()
+    if max_id_result and max_id_result[0] is not None:
+        new_id = int(max_id_result[0]) + 1
+    else:
+        new_id = 1
+
+    title = request.form["title"]
+    director = request.form["director"]
+    genre = request.form["genre"]
+    release_date = request.form["release_date"]
+
+    cur.execute("""
+            INSERT INTO movies
+            VALUES ('{}', '{}', '{}', '{}', '{}');
+        """.format(new_id, title, director, genre, release_date))
+    connect.commit()
+
+    return redirect(url_for('user_info', id=id, target_user_id=target_user_id))
+
+
 
 
 
