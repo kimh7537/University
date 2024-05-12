@@ -126,4 +126,6 @@ group by id;
 **d. Find the ID and the grade-points average of students whose GPA is greater
 than 3.0.**
 
+
+
 ![alt text](<image/Untitled 10.png>)
