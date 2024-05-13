@@ -175,6 +175,37 @@
     </form>
 {% endif %}
 
+{% if target_role == 'admin' and user == "admin" %}
+    <h2>[Delete Movie]</h2>
+    <table border="1">
+        <thead>
+        <th>title</th>
+        <th>director</th>
+        <th>genre</th>
+        <th>rel_date</th>
+        <th>delete</th>
+        </thead>
+        <tbody>
+        {% for movie in movies %}
+            <tr>
+                <td>{{ movie[1] }}</td>
+                <td>{{ movie[2] }}</td>
+                <td>{{ movie[3] }}</td>
+                <td>{{ movie[4] }}</td>
+                <td>
+                    <form action="/delete_movie" method="post">
+                        <input type="hidden" name="id" value= {{ user }}>
+                        <input type="hidden" name="movieId" value= {{ movie[0] }}>
+                        <input type="hidden" name="target_user_id" value="{{ target_user_id }}">
+                        <input type="submit" name="send" value="delete">
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+
 
 </body>
 </html>

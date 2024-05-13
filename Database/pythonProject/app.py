@@ -143,6 +143,8 @@ def user_info():
     """.format (target_user_id))
     reviews = cur.fetchall()
 
+    cur.execute("SELECT * FROM movies;")
+    movies = cur.fetchall()
 
     cur.execute("SELECT id FROM ties WHERE opid = '{}' AND tie = 'follow';".format(target_user_id))
     followers = cur.fetchall()
@@ -168,7 +170,8 @@ def user_info():
         followed_users=followed_users,
         muted_users=muted_users,
         user_role=user_role,
-        target_role=target_role
+        target_role=target_role,
+        movies = movies
     )
 
 @app.route('/tie', methods=['POST'])
@@ -229,8 +232,8 @@ def edit_tie():
 
 @app.route('/add_movie', methods=['POST'])
 def add_movie():
-    id = request.form["id"]
-    target_user_id = request.form["target_user_id"]
+    id = request.form["id"] #lisa
+    target_user_id = request.form["target_user_id"] #amdin
 
     cur.execute("SELECT MAX(id) FROM movies;")
     max_id_result = cur.fetchone()
@@ -248,6 +251,18 @@ def add_movie():
             INSERT INTO movies
             VALUES ('{}', '{}', '{}', '{}', '{}');
         """.format(new_id, title, director, genre, release_date))
+    connect.commit()
+
+    return redirect(url_for('user_info', id=id, target_user_id=target_user_id))
+
+
+@app.route('/delete_movie', methods=['POST'])
+def delete_movie():
+    id = request.form["id"]
+    target_user_id = request.form["target_user_id"]
+    movieId = request.form["movieId"]
+
+    cur.execute("DELETE FROM movies WHERE '{}' = id;".format(movieId))
     connect.commit()
 
     return redirect(url_for('user_info', id=id, target_user_id=target_user_id))
