@@ -50,6 +50,15 @@
 
 </table>
 
+<div>
+    <h3>Similar Movies</h3>
+    <ul>
+        {% for similar in similar_movies %}
+            <li>{{ similar[0] }}</li>
+        {% endfor %}
+    </ul>
+</div>
+
 <hr>
 
 <h2>[Reviews]</h2>

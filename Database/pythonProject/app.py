@@ -73,7 +73,19 @@ def review_sort():
     elif send == "title":
         cur.execute("SELECT ratings, uid, title, review, TO_CHAR(rev_time, 'YYYY-MM-DD HH24:MI:SS') FROM reviews JOIN movies ON movies.id = reviews.mid ORDER BY title;")
         reviews = cur.fetchall();
-
+    elif send == "followers":
+        cur.execute("""
+        SELECT r.ratings, r.uid, title, r.review, TO_CHAR(r.rev_time, 'YYYY-MM-DD HH24:MI:SS')
+        FROM reviews AS r
+        JOIN movies ON movies.id = r.mid
+        LEFT JOIN ties AS f ON f.opid = r.uid AND f.tie = 'follow'
+        WHERE r.uid NOT IN (
+            SELECT opid FROM ties WHERE id = '{}' AND tie = 'mute'
+        )
+        GROUP BY r.ratings, r.uid, r.title, r.review, r.rev_time
+        ORDER BY follower_count DESC;
+    """.format(id))
+    reviews = cur.fetchall()
     return render_template("main.html", reviews=reviews, movies=movies, user = id)
 
 
@@ -95,7 +107,12 @@ def movie_info():
     cur.execute("SELECT ROUND(AVG(ratings), 1) FROM reviews WHERE mid = '{}';".format(movie_info[0]))
     average_rating = cur.fetchone()[0]
 
-    return render_template("movie_info.html", movie_info=movie_info, reviews=reviews, average_rating=average_rating, user = id)
+    cur.execute("""
+        SELECT title FROM movies WHERE genre = '{}' AND id != '{}' LIMIT 5;
+    """.format(movie_info[3], movie_info[0]))
+    similar_movies = cur.fetchall()
+
+    return render_template("movie_info.html", movie_info=movie_info, reviews=reviews, average_rating=average_rating, user = id, similar_movies=similar_movies)
 
 
 
