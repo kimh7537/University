@@ -17,13 +17,20 @@ def register():
 
     cur.execute("SELECT title, round(avg(ratings),1), director, genre, rel_date FROM movies LEFT JOIN reviews ON movies.id = reviews.mid GROUP BY title, director, genre, rel_date ORDER BY rel_date DESC;")
     movies = cur.fetchall();
-    cur.execute("SELECT ratings, uid, title, review, TO_CHAR(rev_time, 'YYYY-MM-DD HH24:MI:SS') FROM reviews JOIN movies ON movies.id = reviews.mid ORDER BY rev_time DESC;")
-    reviews = cur.fetchall();
+    cur.execute("""
+            SELECT ratings, uid, title, review, TO_CHAR(rev_time, 'YYYY-MM-DD HH24:MI:SS') 
+            FROM reviews JOIN movies ON movies.id = reviews.mid 
+            WHERE uid NOT IN (
+                SELECT opid FROM ties WHERE id = '{}' and tie = 'mute'
+                )
+            ORDER BY rev_time DESC;
+            """.format(id))
+    reviews = cur.fetchall()
 
-    if send == "sign up" and len(id) >=1 and len(password) >=1:
+    if send == "sign up":
         cur.execute("SELECT id FROM users WHERE id = '{}';".format(id))
         result = cur.fetchone()
-        if result:
+        if result or (len(id) < 1 and len(password) < 1 ):
             return render_template("signup_fail.html")
         elif not result:
             cur.execute("INSERT INTO users VALUES('{}', '{}', '{}');".format(id, password, 'user'))
@@ -44,8 +51,15 @@ def register():
 def movie_sort():
     id = request.form["id"]
     send = request.form["send"]
-    cur.execute("SELECT ratings, uid, title, review, TO_CHAR(rev_time, 'YYYY-MM-DD HH24:MI:SS') FROM reviews JOIN movies ON movies.id = reviews.mid ORDER BY rev_time DESC;")
-    reviews = cur.fetchall();
+    cur.execute("""
+            SELECT ratings, uid, title, review, TO_CHAR(rev_time, 'YYYY-MM-DD HH24:MI:SS') 
+            FROM reviews JOIN movies ON movies.id = reviews.mid 
+            WHERE uid NOT IN (
+                SELECT opid FROM ties WHERE id = '{}' and tie = 'mute'
+                )
+            ORDER BY rev_time DESC;
+            """.format(id))
+    reviews = cur.fetchall()
 
     if send == "latest":
         cur.execute("SELECT title, round(avg(ratings),1), director, genre, rel_date FROM movies LEFT JOIN reviews ON movies.id = reviews.mid GROUP BY title, director, genre, rel_date ORDER BY rel_date DESC;")
@@ -54,7 +68,7 @@ def movie_sort():
         cur.execute("SELECT title, round(avg(ratings),1), director, genre, rel_date FROM movies LEFT JOIN reviews ON movies.id = reviews.mid GROUP BY title, director, genre, rel_date ORDER BY genre;")
         movies = cur.fetchall();
     elif send == "ratings":
-        cur.execute("SELECT title, round(avg(ratings),1) as ratings_avg, director, genre, rel_date FROM movies LEFT JOIN reviews ON movies.id = reviews.mid GROUP BY title, director, genre, rel_date ORDER BY ratings_avg DESC;")
+        cur.execute("SELECT title, round(avg(ratings),1) as ratings_avg, director, genre, rel_date FROM movies LEFT JOIN reviews ON movies.id = reviews.mid GROUP BY title, director, genre, rel_date ORDER BY ratings_avg DESC NULLS LAST;")
         movies = cur.fetchall();
     return render_template("main.html", reviews=reviews, movies=movies, user = id)
 
@@ -68,24 +82,43 @@ def review_sort():
     movies = cur.fetchall();
 
     if send == "latest":
-        cur.execute("SELECT ratings, uid, title, review, TO_CHAR(rev_time, 'YYYY-MM-DD HH24:MI:SS') FROM reviews JOIN movies ON movies.id = reviews.mid ORDER BY rev_time DESC;")
-        reviews = cur.fetchall();
+        cur.execute("""
+            SELECT ratings, uid, title, review, TO_CHAR(rev_time, 'YYYY-MM-DD HH24:MI:SS') 
+            FROM reviews JOIN movies ON movies.id = reviews.mid 
+            WHERE uid NOT IN (
+                SELECT opid FROM ties WHERE id = '{}' and tie = 'mute'
+                )
+            ORDER BY rev_time DESC;
+            """.format(id))
+        reviews = cur.fetchall()
     elif send == "title":
-        cur.execute("SELECT ratings, uid, title, review, TO_CHAR(rev_time, 'YYYY-MM-DD HH24:MI:SS') FROM reviews JOIN movies ON movies.id = reviews.mid ORDER BY title;")
-        reviews = cur.fetchall();
+        cur.execute("""
+            SELECT ratings, uid, title, review, TO_CHAR(rev_time, 'YYYY-MM-DD HH24:MI:SS') 
+            FROM reviews JOIN movies ON movies.id = reviews.mid 
+            WHERE uid NOT IN (
+                SELECT opid FROM ties WHERE id = '{}' and tie = 'mute'
+                )
+            ORDER BY title;
+            """.format(id))
+        reviews = cur.fetchall()
     elif send == "followers":
         cur.execute("""
-        SELECT r.ratings, r.uid, title, r.review, TO_CHAR(r.rev_time, 'YYYY-MM-DD HH24:MI:SS')
-        FROM reviews AS r
-        JOIN movies ON movies.id = r.mid
-        LEFT JOIN ties AS f ON f.opid = r.uid AND f.tie = 'follow'
-        WHERE r.uid NOT IN (
-            SELECT opid FROM ties WHERE id = '{}' AND tie = 'mute'
-        )
-        GROUP BY r.ratings, r.uid, r.title, r.review, r.rev_time
-        ORDER BY follower_count DESC;
-    """.format(id))
-    reviews = cur.fetchall()
+            SELECT ratings, uid, title, review, TO_CHAR(rev_time, 'YYYY-MM-DD HH24:MI:SS'), follower_count 
+            FROM reviews r JOIN movies m 
+            ON m.id = r.mid
+            LEFT JOIN (
+                SELECT opid, count(*) as follower_count
+                FROM ties
+                WHERE tie = 'follow'
+                GROUP BY opid
+            ) as t ON r.uid = t.opid
+            WHERE uid NOT IN (
+                SELECT opid FROM ties WHERE id = '{}' and tie = 'mute'
+                )
+            ORDER BY follower_count DESC NULLS LAST;
+            """.format(id))
+        reviews = cur.fetchall()
+
     return render_template("main.html", reviews=reviews, movies=movies, user = id)
 
 
@@ -136,7 +169,7 @@ def submit_review():
         """.format(ratings, review_text, user_id, movie_id))
     else:
         cur.execute("""
-            INSERT INTO reviews (mid, uid, title, ratings, review, rev_time)
+            INSERT INTO reviews
             VALUES ('{}', '{}', '{}', '{}', CURRENT_TIMESTAMP);
         """.format(movie_id, user_id, ratings, review_text))
 
@@ -296,8 +329,16 @@ def main_page():
 
     cur.execute("SELECT title, round(avg(ratings),1), director, genre, rel_date FROM movies LEFT JOIN reviews ON movies.id = reviews.mid GROUP BY title, director, genre, rel_date ORDER BY rel_date DESC;")
     movies = cur.fetchall();
-    cur.execute("SELECT ratings, uid, title, review, TO_CHAR(rev_time, 'YYYY-MM-DD HH24:MI:SS') FROM reviews JOIN movies ON movies.id = reviews.mid ORDER BY rev_time DESC;")
-    reviews = cur.fetchall();
+
+    cur.execute("""
+            SELECT ratings, uid, title, review, TO_CHAR(rev_time, 'YYYY-MM-DD HH24:MI:SS') 
+            FROM reviews JOIN movies ON movies.id = reviews.mid 
+            WHERE uid NOT IN (
+                SELECT opid FROM ties WHERE id = '{}' and tie = 'mute'
+                )
+            ORDER BY rev_time DESC;
+            """.format(id))
+    reviews = cur.fetchall()
 
     return render_template("main.html", reviews = reviews, movies=movies, user = id)
 
