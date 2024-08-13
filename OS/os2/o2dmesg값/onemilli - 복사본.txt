@@ -1,0 +1,9 @@
+[  112.445749] [Pid: 2061], CPUburst: 2758234355, rt_priority:10
+[  116.445786] [Pid: 2061], CPUburst: 3999984454, rt_priority:10
+[  120.438857] [Pid: 2061], CPUburst: 3993092976, rt_priority:10
+[  124.436954] [Pid: 2061], CPUburst: 3998009317, rt_priority:10
+[  124.919030] [Pid: 2061], CPUburst: 482069230, rt_priority:10
+[  128.436599] [Pid: 2060], CPUburst: 3515533901, rt_priority:10
+[  132.434271] [Pid: 2060], CPUburst: 3996291252, rt_priority:10
+[  136.431411] [Pid: 2060], CPUburst: 3997103755, rt_priority:10
+[  140.147378] [Pid: 2060], CPUburst: 3715932867, rt_priority:10
